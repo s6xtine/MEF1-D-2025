@@ -13,11 +13,18 @@ Liste *suiv;
 
 
 struct Noeud {
-char *id;
+Usine *usine;
 double fuite; // pourcentage sur le tronçon parent->this
 double volume_amont; // en milliers de m3 (k.m3)
 Liste *enfant;
 };
+
+typedef struct {
+    char *id;
+    double capacite_max; // capacité maximale de traitement (max)
+    double volume_capte; // volume total capté par les sources (src)
+    double volume_reel; // volume réellement traité (real)
+} Usine;
 
 
 Noeud *creationNoeud(const char *id, double fuite);
