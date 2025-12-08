@@ -1,325 +1,193 @@
-#!/bin/bash
+#!/bin/bash	# le script s’exécute avec bash
 
-#initialisations des fichiers
+
+// Initialisation des fichiers
+
+inputFile='./data/c-wildwater_v0.dat'		# fichier de données en entrée
+# Ne pas créer le fichier s'il existe déjà
+if [ ! -f "$inputFile" ]; then
+    echo "Erreur : fichier $inputFile introuvable"
+    exit 1
+fi		
 
 outputFile='./sortie.txt'
 > "$outputFile"
 
-inputFile='./entree.txt'
-> "$inputFile"
+tempFile='./tmp.txt'
+> "$tempFile"
 
+histoFile=""	# variable vide initialisée
+leaksFile="./leaks.dat"
+> "$leaksFile"
 
-#fonction qui vérifie s'il y a le bon nombre d'arguments et s'ils sont cohérents
-verification_arg(){
-    #signale un probleme si les arguments 1, 2 et 3 sont manquants
-    if [ -z $1 ] || [ -z $2 ] || [ -z $3 ]; then
-        echo "arguments manquants"
-        return 1
-    else 
-    	#signale un probleme si le fichier n'existe pas
-        if [ ! -f "$1" ]; then 
-            echo "Le fichier n'existe pas"
-            return 2
-        else
-            echo "Fichier existant, OK"
-        fi
-        a='indiv'
-        b='all'
-        c="comp"
-        #verifie que les arguemnts sont cohérents
-        case $2 in
-            'hvb'|'hva') 
-                echo "Argument 2 valide"
-                if [ "$3" == "$c" ]; then
-                    echo "Argument 3 valide"
-                else
-                    echo "Erreur : argument 3 invalide"
-                    return 3
-                fi
-           ;;
-            'lv')
-                echo "Argument 2 valide"
-                if [ "$3" == "$a" ] || [ "$3" == "$b" ] || [ "$3" == "$c" ]; then
-                    echo "Argument 3 valide"
-                else
-                    echo "Erreur : argument 3 invalide"
-                    return 4
-                fi
-           ;;
-            *)
-                echo "Erreur : Argument 2 invalide"
-                return 5
-          ;;
-        esac 
-    fi
-    #verifie s'il y a un 5eme argument pour afficher l'aide
-    if [ -z $5 ]; then
-       echo "pas d'aide"
-    else
-    	#affiche l'adie lorsque demandé
-        d="-h"
-        if [ "$5" != "$d" ]; then
-            echo "argument 5 invalide"
-            return 6
-        else
-            aide
-        fi  
-    fi
-    #verifie s'il y a un 4eme argument pour l''identifiant de la centrale
-    if [ -z $4 ]; then
-        echo "pas d'id de centrale"
-    else
-        e=5
-        if (( "$4" > "$e" )); then
-            echo "argument 4 invalide"
-            return 7
-        else
-            echo 'argumnt 4 valide'
-        fi
-        return 0
-    fi
-}
+start_time=$(date +%s)	# mémorise l’heure du début en seconde
 
-#fonction qui affiche une aide détaillée sur l'utilisation du script
-aide(){
-    echo -e "Utilisation : $0  <arg 1>  <arg2 >  <arg 3>  <arg4>  <arg5>\n"
-    echo "Description : L'utilisation de ce script nécessite 3 à 5 arguments :"
-    echo "-argument 1 : le chemin du fichier de données, il indique l'endroit où se trouve le fichier d'entrée"
-    echo "-argument 2 : le type de station à traiter (hvb, hva ou lv)"
-    echo "-argument 3 : le type de consommateur à traiter (comp pour entreprises, indiv pour particuliers ou all pour tous)"
-    echo "-argument 4 : OPTIONEL - identifiant de la centrale, permet de filtrer les résultats pour une centrale spécifique"
-    echo "-argument 5 : OPTIONEL - (-h) permet d'afficher une aide détaillée sur l'utilisation du script"
-    echo "Attention! Dans le cas des stations hvb et hva, la seule option de consommateur est comp"
-}
+# vérification de l'installation gnuplot 
 
-verification_arg $1 $2 $3 $4 $5
-res1=$?
-#s'il y a un probleme, on affiche l'aide
-if (( res1 != 0 )); then
-    echo "$res1"
-    aide
+GNUPLOT_AVAILABLE=false
+if command -v gnuplot >/dev/null 2>&1; then
+    GNUPLOT_AVAILABLE=true
+    echo "✓ gnuplot détecté"
 else
-    echo 'OK'
+    echo "⚠ gnuplot non installé (histogrammes PNG ne seront pas générés)"
 fi
 
-#cd codeC
-make -C ./codeC
-#gcc -o programme codeC.c
-#verifie l'existance du fichier c sinon elle le compile
-#if [ ! -f test ]; then 
-   # echo "l'executable programme.c est introuvable. compilation ..."
-    if [ $? -ne 0 ]; then 
-        echo 'erreur : echec de la compilation'
-        exit 1
+
+# Fonction d'aide (qui affiche l’utilisation du programme shell)
+
+aide(){
+    echo -e "Utilisation : $0 <commande> <option> <identifiant> <aide>\n"
+    echo "Commandes :"
+    echo "- histo <type> : Génère un histogramme"
+    echo "- leaks <identifiant usine> : Calcul les pertes d'une usine"
+    echo "Type histogramme : max / src / real"
+    echo "-h : affiche cette aide"
+}
+
+# Vérification des arguments
+
+verification_arg(){
+    if [ -z "$1" ]; then
+        echo "Erreur : commande manquante"
+        return 1
     fi
-#fi
 
-#on débute le chronometre pour avoir le temps d'exécution
-start_time=$(date +%s)
+    # option aide
+   if [ "$2" = "-h" ] || [ "$3" = "-h" ] || [ "$4" = "-h" ] || [ "$5" = "-h" ]; then
+   aide
+        exit 0
+    fi
 
-# Si un identifiant de centrale est fourni, on fait le filtrage pour la centrale demandée ainsi que pour les autres parametres
-if [ -n "$4" ]; then 
- case $2 in
- 
-#dans le cas des stations hvb et hva, le consommateur ne peut être que une entrerpise
-        'hvb')
-            grep -E "^[0-9]+;[0-9]+;-;-;" "$1" | grep -E "$4;" | cut -f 2,7,8 -d ';' | tr '-' '0' | tr ';' ':' > "$inputFile"
-            	end_time=$(date +%s)
-    		duration=$(( end_time - start_time ))
-    		echo "temps d'exucation : ${duration}.0 sec"
-            if [ $? != 0 ]; then
-            	echo "execution echouee"
+    case $1 in
+
+        "histo")
+            if [ -z "$2" ]; then
+                echo "Erreur : type histo manquant"
+                return 2
+            fi
+            if [ $# -ne 2 ]; then
+                echo "Erreur : nombre d'arguments incorrect"
+                return 6
+            fi
+            case $2 in
+                "max"|"src"|"real")
+                    echo "Type histogramme OK"
+                    ;;
+                *)
+                    echo "Erreur : type histogramme invalide"
+                    return 3
+                    ;;
+            esac
+        ;;
+
+        "leaks")
+            if [ -z "$2" ]; then
+                echo "Erreur : identifiant manquant"
+                return 4
+            fi
+            if [ $# -ne 2 ]; then
+                echo "Erreur : nombre d'arguments incorrect"
+                return 7
             fi
         ;;
-        'hva')
-            grep -E "^[0-9]+;[^;]*;[0-9]+;-;" "$1" | grep -E "$4;" | cut -f 3,7,8 -d ';' | tr '-' '0' | tr ';' ':' > "$inputFile"
-            end_time=$(date +%s)
-    	duration=$(( end_time - start_time ))
-    	echo "temps d'exucation : ${duration}.0 sec"
-        ;;
-        'lv')
-        case $3 in
-        	'comp')
-        		grep -E "^[^;]*;[^;]*;[^;]*;[0-9]+;[^;]*;-;" "$1" | grep -E "$4;" | cut -f 4,7,8 -d ';' | tr '-' '0' | tr ';' ':'  > "$inputFile"
-        		end_time=$(date +%s)
-    			duration=$(( end_time - start_time ))
-    			echo "temps d'exucation : ${duration}.0 sec"
-        	;;
-        	'indiv')
-        		grep -E "^[^;]*;[^;]*;[^;]*;[0-9]+;-;[^;]*;" "$1" | grep -E "$4;" | cut -f 4,7,8 -d ';' | tr '-' '0' | tr ';' ':'  > "$inputFile"
-        		end_time=$(date +%s)
-    			duration=$(( end_time - start_time ))
-    			echo "temps d'exucation : ${duration}.0 sec"
-    		;;
-        	'all')
-        		grep -E "^[^;]*;[^;]*;[^;]*;[0-9]+;[^;]*;[^;]*;" "$1" | grep -E "$4;" | cut -f 4,7,8 -d ';' | tr '-' '0' | tr ';' ':'  > "$inputFile"
-        		end_time=$(date +%s)
-    			duration=$(( end_time - start_time ))
-    			echo "temps d'exucation : ${duration}.0 sec"
-        	;;
-        	*)
-        		echo 'erreur'
-        	;;
-        esac
-        ;;
+
         *)
-            echo "Option non reconnue pour la centrale $4."
+            echo "Erreur : commande inconnue"
+            return 5
         ;;
     esac
-else
-#si aucun identifiant de centrale n'est spécifié, on effectue le filtrage sur les autres arguments
-	case $2 in
-    		'hvb')
-        		grep -E "^[0-9]+;[0-9]+;-;-;" "$1" | cut -f 2,7,8 -d ';' | tr '-' '0' | tr ';' ':'  > "$inputFile"
-        		end_time=$(date +%s)
-        		duration=$(( end_time - start_time ))
-        		echo "temps d'exucation : ${duration}.0 sec"
-    		;;
-    		'hva')
-    		#cd codeC
 
-#make 
-        		grep -E "^[0-9]+;[^;]*;[0-9]+;-;" "$1" | cut -f 3,7,8 -d ';' | tr '-' '0' | tr ';' ':'  > "$inputFile"
-        		end_time=$(date +%s)
-        		duration=$(( end_time - start_time ))
-        		echo "temps d'exucation : ${duration}.0 sec"
-    		;;
-    		'lv')
-        		case $3 in
-        			'comp')
-        				grep -E "^[^;]*;[^;]*;[^;]*;[0-9]+;[^;]*;-;" "$1" | cut -f 4,7,8 -d ';' | tr '-' '0' | tr ';' ':'  > "$inputFile"
-        				end_time=$(date +%s)
-    					duration=$(( end_time - start_time ))
-    					echo "temps d'exucation : ${duration}.0 sec" 
-        			;;
-        			'indiv')
-        				grep -E "^[^;]*;[^;]*;[^;]*;[0-9]+;-;[^;]*;" "$1" | cut -f 4,7,8 -d ';' | tr '-' '0' | tr ';' ':'  > "$inputFile"
-        				end_time=$(date +%s)
-        				duration=$(( end_time - start_time ))
-        				echo "temps d'exucation : ${duration}.0 sec"
-        			;;
-        			'all')
-        				grep -E "^[^;]*;[^;]*;[^;]*;[0-9]+;[^;]*;[^;]*;" "$1" | cut -f 4,7,8 -d ';' | tr '-' '0' | tr ';' ':'  > "$inputFile"
-        				end_time=$(date +%s)
-        				duration=$(( end_time - start_time ))
-        				echo "temps d'exucation : ${duration}.0 sec"
-        			;;
-        			*)
-        				echo 'erreur'
-        			;;
-        		esac
-    		;;
-    		*)
-        		echo 'test'
-    		;;
-	esac
+    return 0
+}
+
+
+verification_arg $@
+ret=$?		// récupère le code de retour de la fonction
+
+if (( ret != 0 )); then	# si différent on affiche l’aide et on sort
+    aide
+    exit $ret
+else
+    echo "Arguments OK"
 fi
 
-start_time2=$(date +%s)
-        		./codeC/test < "$inputFile"
-        		end_time2=$(date +%s)
-    			duration2=$(( end_time - start_time ))
-    			echo "temps d'exucation : ${duration2}.0 sec"
+# Compilation (faire le lien dans le code c)
 
-#ici, on nomme les fichiers et on effectue le traitement supplémentzire pour les station lv all
-if [ -n "$4" ]; then
-	if [ "$2" = "lv" ] && [ "$3" = "all" ]; then
-		#on trie d'abord le fichier par ordre croissant de la consommation
-		sort -t ':' -k 3,3n "$outputFile" > "$2_$3_$4.txt"
-		#puis on extrait les 10 plus petites consommations dans un fichier temporaire
-        	head -n 5 "$2_$3_$4.txt" > "$tempFile"
-        	#puis on extrait les 10 plus grandes consommations dans un fichiers temporaire
-        	tail -n 5 "$2_$3_$4.txt" >> "$tempFile"
-        	#on lit ligne par ligne les colonnes de la conso et de la capacité pour en faire la différence qu'on ajoute dans une nouvelle colonne
-        	while IFS= read -r ligne; do
-    			capa=$(echo "$ligne" | cut -d':' -f2)
-    			conso=$(echo "$ligne" | cut -d':' -f3)
-    			qaec=$((conso - capa))
-    			echo "$ligne:$qaec" >> "$minmaxFile"
-		done < "$tempFile"
-		cp "$minmaxFile" "$tempFile"
-		#puis on trie par ordre décroissant de la quantité absolue d'énergie consommée, puis on retire la colonne
-		sort -t ':' -k 4,4nr "$tempFile" | cut -f 1,2,3 -d ':' > "$minmaxFile"
-		#on rajoute en premiere ligne les informations 
-		texte="Station LV : Capacité : Consommation (tous)"
-        	sed -i "1i$texte" "$minmaxFile"
-        else
-        	#on trie par ordre croissant 
-		sort -t ':' -k 2,2n "$outputFile" > "$2_$3_$4.txt"
-		case $2 in
-			'hvb')
-				texte="Station HVB : Capacité : Consommation (entreprises)"
-        			sed -i "1i$texte" "$2_$3_$4.txt"
-        		;;
-        		'hva')
-        			texte="Station HVA : Capacité : Consommation (entreprises)"
-        			sed -i "1i$texte" "$2_$3_$4.txt"
-        		;;
-        		'lv')
-        			case $3 in
-        				'comp')
-        				texte="Station LV : Capacité : Consommation (entreprises)"
-        				sed -i "1i$texte" "$2_$3_$4.txt"
-        				;;
-        				'indiv')
-        					texte="Station LV : Capacité : Consommation (particuliers)"
-        					sed -i "1i$texte" "$2_$3_$4.txt"
-        				;;
-        				*)
-        					echo 'erreur'
-        				;;
-        			esac
-        		;;
-        		*)
-        			echo 'erreur'
-        		;;
-		esac
-        fi
-else
-#on fait la meme chose dans le  cas ou il n'y a pas d'identifiant de centrale
-	if [ "$2" = "lv" ] && [ "$3" = "all" ]; then
-		sort -t ':' -k 3,3n "$outputFile" > "$2_$3.txt"
-        	head -n 10 "$2_$3.txt" > "$tempFile"
-        	tail -n 10 "$2_$3.txt" >> "$tempFile"
-        	while IFS= read -r ligne; do
-    			capa=$(echo "$ligne" | cut -d':' -f2)
-    			conso=$(echo "$ligne" | cut -d':' -f3)
-    			qaec=$((conso - capa))
-    			echo "$ligne:$qaec" >> "$minmaxFile"
-		done < "$tempFile"
-		cp "$minmaxFile" "$tempFile"
-		sort -t ':' -k 4,4nr "$tempFile" | cut -f 1,2,3 -d ':' > "$minmaxFile"
-        	texte="Station LV : Capacité : Consommation (tous)"
-        	sed -i "1i$texte" "$minmaxFile"
-        else
-		sort -t ':' -k 2,2n "$outputFile" > "$2_$3.txt"
-		case $2 in
-		'hvb')
-			texte="Station HVB : Capacité : Consommation (entreprises)"
-        		sed -i "1i$texte" "$2_$3.txt"
-        	;;
-        	'hva')
-        		texte="Station HVA : Capacité : Consommation (entreprises)"
-        		sed -i "1i$texte" "$2_$3.txt"
-        	;;
-        	'lv')
-        		case $3 in
-        			'comp')
-        				texte="Station LV : Capacité : Consommation (entreprises)"
-        				sed -i "1i$texte" "$2_$3.txt"
-        			;;
-        			'indiv')
-        				texte="Station LV : Capacité : Consommation (particuliers)"
-        				sed -i "1i$texte" "$2_$3.txt"
-        			;;
-        			*)
-        				echo 'erreur'
-        			;;
-        		esac
-        	;;
-        	*)
-        		echo 'erreur'
-        	;;
-	esac
-	fi
+make
+if [ $? -ne 0 ]; then
+    echo "Erreur : compilation échoué"
+    exit 10
 fi
+
+
+# CAS HISTOGRAMME
+
+
+if [ "$1" = "histo" ]; then
+
+    typeH=$2
+
+    echo "Génération histogramme ($typeH)"
+
+    ./wildwater histo "$typeH"
+
+    if [ $? -ne 0 ]; then
+        echo "Erreur exécution programme C"
+        exit 11
+    fi
+
+    histoFile="vol_${typeH}.dat"
+
+    if [ ! -f "$histoFile" ]; then
+        echo "Erreur : $histoFile manquant"
+        exit 12
+    fi
+
+    if [ "$GNUPLOT_AVAILABLE" = true ]; then
+        echo "Génération image ..."
+        gnuplot <<EOF	// lance gnuplot pour créer un PNG
+set terminal png size 1200,800
+set output "vol_${typeH}.png"
+set title "Histogramme ($typeH)"
+set xlabel "Usines"
+set ylabel "Volume (k.m3)"
+set xtics rotate by -45
+plot "$histoFile" using 2:xtic(1) with boxes title "$typeH"
+EOF
+        echo "✓ Image créée : vol_${typeH}.png"
+    else
+        echo "⚠ gnuplot non disponible → pas d'image PNG générée"
+        echo "   Données disponibles dans : $histoFile"
+    fi
+
+fi
+
+
+# CAS LEAKS
+
+if [ "$1" = "leaks" ]; then
+
+    usine="$2"
+
+    echo "Calcul des fuites pour : $usine"
+
+    ./wildwater leaks "$usine"	# exécution du fichier
+
+    if [ $? -ne 0 ]; then
+        echo "Erreur programme C"
+        exit 13
+    fi
+
+    echo "Ajout dans leaks.dat effectué"
+
+fi
+
+# Temps total (calcul et affiche la durée en secondes)
+
+end_time=$(date +%s)
+duration=$(( end_time - start_time ))
+
+echo "Temps total : ${duration}.0 sec"
+
+exit 0
+
