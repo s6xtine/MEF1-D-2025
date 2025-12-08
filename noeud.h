@@ -31,5 +31,8 @@ Noeud *creationNoeud(const char *id, double fuite);
 void ajouterNoeud(Noeud *parent, Noeud *enfant);
 void libererNoeud(Noeud *racine);
 
+void histo_max(const char *csv);
+void histo_src(const char *csv); 
+void histo_real(const char *csv);
 
 #endif // NODE_H
