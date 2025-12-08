@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 
-
+//faut que j'enleve ca a la fin mais belek
 void histo_max(const char *csv);
 void histo_src(const char *csv); 
 void histo_real(const char *csv);
@@ -17,7 +17,7 @@ void histo_real(const char *csv);
  *   Implémentation permissive : ignore les lignes mal formées (peut etre changer ca ?)
 */
 
-void histo_max(const char *csv) {
+void histo_max(const char *csv){
 	if (csv == NULL){
         return;
     }
@@ -30,38 +30,58 @@ void histo_max(const char *csv) {
 
 	Arbre *racine = NULL;  //initialise la racine de l'AVL des usines
 	char ligne[1024];  //stocke les lignes lues du fichier
+    int h = 0;  //sert à l'équilibrage de l'AVL, hauteur initiale
 
 	while (fgets(ligne, sizeof(ligne), entree)){  //lecture du fichier ligne par ligne par ligne
 
 		char *sauveptr = NULL;
         const char *delimitateurs = ",; \t\r\n";
-		char *tok = strtok_r(ligne, delimitateurs, &sauveptr);
-		if (tok == NULL){
-            continue;
+
+        //lecture du 1er jeton
+		char *jeton = strtok_r(ligne, delimitateurs, &sauveptr);
+		if (jeton == NULL){
+            continue;  //ligne vide, on passe à la suivante
         } 
-		int id = atoi(tok);
+        if(strcmp(jeton, "-") != 0){
+            continue; //la ligne n'est pas une ligne "usine seule"
+        }
 
-		tok = strtok_r(NULL, delimitateurs, &sauveptr);
-		if (tok == NULL){
+        //lecture du 2e jeton
+		jeton = strtok_r(NULL, delimitateurs, &sauveptr);
+		if (jeton == NULL){
             continue;
         }
-		long capacite = atol(tok);
+        int id = atoi(jeton);
 
-		tok = strtok_r(NULL, delimitateurs, &sauveptr);
-		if (tok == NULL){
+        //lecture du 3e jeton
+		jeton = strtok_r(NULL, delimitateurs, &sauveptr);
+		if (jeton == NULL){
             continue;
         }
-		long conso = atol(tok);
+        if(strcmp(jeton, "-") != 0){
+            continue;
+        }
 
-		int h = 0;  //sert à l'équilibrage de l'AVL, hauteur initiale
+        //lecture du 4e jeton
+        jeton = strtok_r(NULL, delimitateurs, &sauveptr);
+        if (jeton == NULL){
+            continue;
+        }
+        long capacite = atol(jeton);
+
+        //lecture du 5e jeton
+        jeton = strtok_r(NULL, delimitateurs, &sauveptr);
+        if (jeton == NULL){
+            continue;
+        }
 		racine = insertionAVL(racine, id, &h, capacite, conso);
 	}
 
 	fclose(entree);
 
-	FILE *sortie = fopen("max.dat", "w");  //ouverture du fichier max.dat en ecriture
+	FILE *sortie = fopen("vol_max.dat", "w");  //ouverture du fichier vol_max.dat en ecriture
 	if (sortie == NULL) {
-		perror("fopen max.dat");
+		perror("fopen vol_max.dat");
 		freeAVL(racine);
 		return;
 	}
@@ -70,4 +90,15 @@ void histo_max(const char *csv) {
 	fclose(sortie);
 
 	freeAVL(racine);
+}
+
+void histo_src(const char *csv){
+
+
+
+
+
+
+
+
 }
