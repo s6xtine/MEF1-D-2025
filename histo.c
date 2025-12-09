@@ -29,52 +29,33 @@ void histo_max(const char *csv){
 	}
 
 	Arbre *racine = NULL;  //initialise la racine de l'AVL des usines
-	char ligne[1024];  //stocke les lignes lues du fichier
+	char ligne[2048];  //stocke les lignes lues du fichier
     int h = 0;  //sert à l'équilibrage de l'AVL, hauteur initiale
 
 	while (fgets(ligne, sizeof(ligne), entree)){  //lecture du fichier ligne par ligne par ligne
 
 		char *sauveptr = NULL;
-        const char *delimitateurs = ",; \t\r\n";
 
-        //lecture du 1er jeton
-		char *jeton = strtok_r(ligne, delimitateurs, &sauveptr);
-		if (jeton == NULL){
-            continue;  //ligne vide, on passe à la suivante
-        } 
-        if(strcmp(jeton, "-") != 0){
-            continue; //la ligne n'est pas une ligne "usine seule"
-        }
+        //colonnes du fichier csv
+		char *col1 = strtok_r(ligne, ";", &sauveptr);
+		char *col2 = strtok_r(NULL, ";", &sauveptr);
+		char *col3 = strtok_r(NULL, ";", &sauveptr);
+        char *col4 = strtok_r(NULL, ";", &sauveptr);
+        char *col5 = strtok_r(NULL, ";", &sauveptr);
 
-        //lecture du 2e jeton
-		jeton = strtok_r(NULL, delimitateurs, &sauveptr);
-		if (jeton == NULL){
-            continue;
-        }
-        int id = atoi(jeton);
-
-        //lecture du 3e jeton
-		jeton = strtok_r(NULL, delimitateurs, &sauveptr);
-		if (jeton == NULL){
-            continue;
-        }
-        if(strcmp(jeton, "-") != 0){
-            continue;
+        if(col1 == NULL || col2 == NULL || col3 == NULL || col4 == NULL || col5 == NULL){
+            continue; 
         }
 
-        //lecture du 4e jeton
-        jeton = strtok_r(NULL, delimitateurs, &sauveptr);
-        if (jeton == NULL){
-            continue;
+        //
+        if(strcmp(col1, "-") == 0 && strcmp(col3, "-") == 0 && strcmp(col5, "-") == 0){
+            char *id = strdup(col2);
+            if(id == NULL){
+                continue;  
+            }
+            long capacite = atol(col4);
+            racine = insertionAVL(racine, id, &h, capacite, conso);
         }
-        long capacite = atol(jeton);
-
-        //lecture du 5e jeton
-        jeton = strtok_r(NULL, delimitateurs, &sauveptr);
-        if (jeton == NULL){
-            continue;
-        }
-		racine = insertionAVL(racine, id, &h, capacite, conso);
 	}
 
 	fclose(entree);
@@ -86,9 +67,9 @@ void histo_max(const char *csv){
 		return;
 	}
 
-	parcoursprefixe(racine, sortie);  //parcours l’AVL en préfixe et écrit les données dans max.dat
-	fclose(sortie);
-
+	parcoursInverse(racine, sortie);  //parcours l’AVL en préfixe et écrit les données dans max.dat
+	
+    fclose(sortie);
 	freeAVL(racine);
 }
 

@@ -182,3 +182,12 @@ void freeAVL(Arbre *racine) {
 	 free(racine); // Libère le nœud courant 
 	 } 
 }
+
+void parcoursInverse(Arbre* a, FILE* f){ //fait un parcours inverse sur le AVL
+    if(a==NULL){
+        return;
+    }
+    parcoursInverse(a->droit, f);
+    fprintf(f, "%d:%ld:%ld\n", a->id_station, a->capacite_total, a->conso_total);
+    parcoursInverse(a->gauche, f);
+}
