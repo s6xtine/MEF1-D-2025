@@ -5,12 +5,6 @@
 #include <stdio.h>
 
 
-//faut que j'enleve ca a la fin mais belek
-void histo_max(const char *csv);
-void histo_src(const char *csv); 
-void histo_real(const char *csv);
-
-
 /*
  * histo_max:
  *   Les séparateurs acceptés sont ',' ou ';' ou espace/tab (tcheker les \t\r\n ???)
