@@ -1,6 +1,7 @@
 #ifndef AVL_H
 #define AVL_H
 #include <stdio.h>
+#include "noeud.h" // Inclusion de la structure Noeud pour utilisation dans AVL
 
 typedef struct arbre{
     int id_station;
