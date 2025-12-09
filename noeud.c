@@ -17,7 +17,12 @@ return r;
 Noeud *creationNoeud(const char *id, double fuite) {
 Noeud *n = malloc(sizeof(Noeud));
 if (!n) return NULL;
-n->id = strdup_safe(id ? id : "");
+n->usine = malloc(sizeof(Usine));
+if (!n->usine) {
+	free(n);
+	return NULL;
+}
+n->usine->id = strdup_safe(id); // Associe l'identifiant à la structure Usine
 n->fuite = fuite;
 n->volume_amont = 0.0;
 n->enfant = NULL;
@@ -45,6 +50,6 @@ libererNoeud(c->enfant);
 free(c);
 c = suiv;
 }
-free(racine->id);
+free(racine->usine->id);
 free(racine);
 }

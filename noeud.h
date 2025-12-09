@@ -2,14 +2,10 @@
 #define NOEUD_H
 
 
-typedef struct Noeud Noeud;
-typedef struct Liste Liste;
-
-
-struct Liste {
-Noeud *enfant;
-Liste *suiv;
-};
+typedef struct Liste {
+    Noeud *enfant;
+    Liste *suiv;
+}Liste;
 
 typedef struct {
     char *id;
@@ -19,12 +15,12 @@ typedef struct {
 } Usine;
 
 
-struct Noeud {
-Usine *usine;
-double fuite; // pourcentage sur le tronçon parent->this
-double volume_amont; // en milliers de m3 (k.m3)
-Liste *enfant;
-};
+typedef struct {
+    Usine *usine;
+    double fuite; // pourcentage sur le tronçon parent->this
+    double volume_amont; // en milliers de m3 (k.m3)
+    Liste *enfant;
+}Noeud;
 
 
 Noeud *creationNoeud(const char *id, double fuite);
