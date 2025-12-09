@@ -1,7 +1,7 @@
 #!/bin/bash	# le script s’exécute avec bash
 
 
-// Initialisation des fichiers
+# Initialisation des fichiers
 
 inputFile='./data/c-wildwater_v0.dat'		# fichier de données en entrée
 # Ne pas créer le fichier s'il existe déjà
@@ -10,10 +10,10 @@ if [ ! -f "$inputFile" ]; then
     exit 1
 fi		
 
-outputFile='./sortie.txt'
+outputFile='./sortie.csv'
 > "$outputFile"
 
-tempFile='./tmp.txt'
+tempFile='./tmp.csv'
 > "$tempFile"
 
 histoFile=""	# variable vide initialisée
@@ -102,7 +102,7 @@ verification_arg(){
 
 
 verification_arg $@
-ret=$?		// récupère le code de retour de la fonction
+ret=$?	# récupère le code de retour de la fonction
 
 if (( ret != 0 )); then	# si différent on affiche l’aide et on sort
     aide
