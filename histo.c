@@ -54,7 +54,7 @@ void histo_max(const char *csv){
                 continue;  
             }
             long capacite = atol(col4);
-            racine = insertionAVL(racine, id, &h, capacite, conso);
+            racine = insertionAVL(racine, id, capacite, &h);
         }
 	}
 
@@ -66,8 +66,9 @@ void histo_max(const char *csv){
 		freeAVL(racine);
 		return;
 	}
+    fprintf(sortie, "identifiant;max volume\n");
 
-	parcoursInverse(racine, sortie);  //parcours l’AVL en préfixe et écrit les données dans max.dat
+	parcoursInverse(racine, sortie);
 	
     fclose(sortie);
 	freeAVL(racine);
@@ -81,5 +82,92 @@ void histo_src(const char *csv){
 
 
 
+// Helper structure for aggregating by id (simple dynamic array)
+typedef struct {
+	char *id;
+	long volume;
+} AggEntry;
+
+static int find_entry(AggEntry *arr, int n, const char *id) {
+	for (int i = 0; i < n; ++i) {
+		if (arr[i].id && strcmp(arr[i].id, id) == 0) return i;
+	}
+	return -1;
+}
+
+void histo_src(const char *csv){
+	if (!csv) return;
+
+	FILE *fp = fopen(csv, "r");
+	if (!fp) {
+		perror("fopen csv");
+		return;
+	}
+
+	AggEntry *arr = NULL;
+	int capacity = 0;
+	int count = 0;
+
+	char line[2048];
+	while (fgets(line, sizeof(line), fp)) {
+		char *saveptr = NULL;
+		char *col1 = strtok_r(line, ";", &saveptr);
+		char *col2 = strtok_r(NULL, ";", &saveptr);
+		char *col3 = strtok_r(NULL, ";", &saveptr);
+		char *col4 = strtok_r(NULL, ";", &saveptr);
+		char *col5 = strtok_r(NULL, ";", &saveptr);
+
+		if (!col2) continue; // need an identifier to attribute to
+
+		// Heuristic: lines representing sources usually have a non '-' in col1
+		// and a numeric value in col4 representing captured volume. We aggregate
+		// col4 per usine id (col2) when col4 is present and col1 != "-".
+		if (col4 == NULL) continue;
+		// trim whitespace
+		while (*col2 == ' ' || *col2 == '\t') ++col2;
+		while (*col4 == ' ' || *col4 == '\t') ++col4;
+
+		if (strcmp(col1 ? col1 : "", "-") == 0) continue;
+
+		long vol = atol(col4);
+		if (vol == 0) continue; // ignore zero volumes
+
+		int idx = find_entry(arr, count, col2);
+		if (idx >= 0) {
+			arr[idx].volume += vol;
+		} else {
+			if (count + 1 > capacity) {
+				int newcap = capacity == 0 ? 16 : capacity * 2;
+				AggEntry *tmp = realloc(arr, newcap * sizeof(AggEntry));
+				if (!tmp) break; // allocation failure -> stop
+				arr = tmp;
+				capacity = newcap;
+			}
+			arr[count].id = strdup(col2);
+			arr[count].volume = vol;
+			count++;
+		}
+	}
+
+	fclose(fp);
+
+	FILE *out = fopen("vol_src.dat", "w");
+	if (!out) {
+		perror("fopen vol_src.dat");
+		for (int i = 0; i < count; ++i) free(arr[i].id);
+		free(arr);
+		return;
+	}
+
+	fprintf(out, "identifiant;volume_capte\n");
+	for (int i = 0; i < count; ++i) {
+		fprintf(out, "%s;%ld\n", arr[i].id, arr[i].volume);
+	}
+
+	fclose(out);
+
+	for (int i = 0; i < count; ++i) free(arr[i].id);
+	free(arr);
+}
 
 }
