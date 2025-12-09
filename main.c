@@ -1,23 +1,49 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include "AVL.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "noeud.h"
 
-int main(){
-    Arbre* racine = NULL;
-    FILE* sortie = fopen("sortie.txt","w"); //ouverture du fichier de sortie trier par le shell
-    if(sortie==NULL){
-        exit(1);
+int main() {
+    Noeud *racine = NULL;
+    FILE *entree = fopen("data/c-wildwater_v0.dat", "r"); // Ouvre le fichier de données
+    if (!entree) {
+        perror("Erreur lors de l'ouverture du fichier de données");
+        return EXIT_FAILURE;
     }
-    int id;
-    long int capa, conso;
-    int h=-1;
-    while(scanf("%d:%ld:%ld\n", &id, &capa, &conso)==3){
-        racine=insertionAVL(racine, id, &h, capa, conso); //fonction qui insert et calcule la somme
-        //la somme est calculée dans la fonction insertionAVL
+
+    FILE *sortie = fopen("sortie.txt", "w"); // Ouvre le fichier de sortie
+    if (!sortie) {
+        perror("Erreur lors de l'ouverture du fichier de sortie");
+        fclose(entree);
+        return EXIT_FAILURE;
     }
-    parcoursprefixe(racine, sortie); //appel de la fonction qui fait un parcours prefixe
-    freeAVL(racine);
-    
+
+    char ligne[256];
+    while (fgets(ligne, sizeof(ligne), entree)) {
+        char id[50];
+        double fuite;
+        if (sscanf(ligne, "-;%49[^;];%*[^;];%*d;%lf", id, &fuite) == 2) {
+            Noeud *nouveau = creationNoeud(id, fuite);
+            if (!racine) {
+                racine = nouveau;
+            } else {
+                ajouterNoeud(racine, nouveau);
+            }
+        }
+    }
+
+    // Exemple de traitement : écrire les données dans le fichier de sortie
+    fprintf(sortie, "ID\tVolume Amont\tFuite\n");
+    Liste *enfant = racine->enfant;
+    while (enfant) {
+        fprintf(sortie, "%s\t%.2f\t%.2f\n", enfant->enfant->usine->id, enfant->enfant->volume_amont, enfant->enfant->fuite);
+        enfant = enfant->suiv;
+    }
+
+    // Libération de la mémoire
+    libererNoeud(racine);
+    fclose(entree);
+    fclose(sortie);
+
     return 0;
 }
