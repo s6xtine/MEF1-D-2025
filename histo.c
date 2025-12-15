@@ -107,9 +107,9 @@ void histo_src(const char *csv){
 	}
 	fclose(entree);
 
-	FILE *sortie = fopen("vol_src.dat", "w");  //ouverture du fichier vol_src.dat en ecriture
+	FILE *sortie = fopen("vol_source.dat", "w");  //ouverture du fichier vol_source.dat en ecriture
 	if (sortie == NULL) {
-		perror("fopen vol_src.dat");
+		perror("fopen vol_source.dat");
 		freeAVL(racine);
 		return;
 	}
