@@ -4,11 +4,11 @@
 #include <string.h>
 #include <stdio.h>
 
-
-/*
- * histo_max:
- *   Implémentation permissive : ignore les lignes mal formées (peut etre changer ca ?)
-*/
+//tcheker le nom des fichiers de sortie si ils sont bons ou pas
+//tcheker si je dois return des -1 ??? voir dans le pdf de consignes
+//histo_max: Implémentation permissive : ignore les lignes mal formées (peut etre changer ca ?) jsp si c'est tcheker
+//tcheker les paramètres de insertion AVL : y'a un char* au lieu d'un int : strdup(col3) dans les 2 derniers histo
+//tcheker si y'a une histoire de complexité
 
 void histo_max(const char *csv){
 	if (csv == NULL){
