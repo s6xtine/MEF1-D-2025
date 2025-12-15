@@ -20,12 +20,12 @@ histoFile=""	# variable vide initialisée
 leaksFile="./leaks.dat"
 > "$leaksFile"
 
-start_time=$(date +%s)	# mémorise l’heure du début en seconde
+start_time=$(date +%s%3N)	# mémorise l’heure du début en milliseconde
 
 # vérification de l'installation gnuplot 
 
 GNUPLOT_AVAILABLE=false
-if command -v gnuplot >/dev/null 2>&1; then
+if command -v gnuplot >/dev/null 2>&1; then # teste si gnuplot est installé
     GNUPLOT_AVAILABLE=true
     echo "✓ gnuplot détecté"
 else
@@ -36,32 +36,48 @@ fi
 # Fonction d'aide (qui affiche l’utilisation du programme shell)
 
 aide(){
-    echo -e "Utilisation : $0 <commande> <option> <identifiant> <aide>\n"
+    echo "Utilisation :"
+    echo " $0 histo <max|src|real>"
+    echo " $0 leaks <identifiant_usine>"
+    echo " $0 -h : Affiche cette aide"
+    echo
     echo "Commandes :"
     echo "- histo <type> : Génère un histogramme"
     echo "- leaks <identifiant usine> : Calcul les pertes d'une usine"
-    echo "Type histogramme : max / src / real"
-    echo "-h : affiche cette aide"
+   
 }
 
 # Vérification des arguments
 
 verification_arg(){
-    if [ -z "$1" ]; then
-        echo "Erreur : commande manquante"
-        return 1
-    fi
 
     # option aide
-   if [ "$2" = "-h" ] || [ "$3" = "-h" ] || [ "$4" = "-h" ] || [ "$5" = "-h" ]; then
+   if [ "$1" = "-h" ] || [ "$2" = "-h" ] || [ "$3" = "-h" ]; then
    aide
         exit 0
     fi
 
-    case $1 in
+    # vérification des arguments 
 
-        "histo")
-            if [ -z "$2" ]; then
+    if [ $# -lt 2 ]; then
+    echo "Erreur : arguments insuffisants"
+    aide
+    exit 1
+fi
+
+commande="$1"
+option="$2"
+
+if [ ! -f "$inputFile" ]; then
+    echo "Erreur : fichier de données introuvable : $inputFile"
+    exit 2
+fi
+
+
+    case "$commande" in
+
+        histo)
+            if [ -z "$option" ]; then
                 echo "Erreur : type histo manquant"
                 return 2
             fi
@@ -69,19 +85,15 @@ verification_arg(){
                 echo "Erreur : nombre d'arguments incorrect"
                 return 6
             fi
-            case $2 in
-                "max"|"src"|"real")
-                    echo "Type histogramme OK"
-                    ;;
-                *)
-                    echo "Erreur : type histogramme invalide"
-                    return 3
-                    ;;
-            esac
-        ;;
+            if [[ "$option" != "max" && "$option" != "src" && "$option" != "real" ]]; then
+                echo "Erreur : type histogramme invalide"
+                return 3
+            fi
+            ;;
 
-        "leaks")
-            if [ -z "$2" ]; then
+
+        leaks)
+            if [ -z "$option" ]; then
                 echo "Erreur : identifiant manquant"
                 return 4
             fi
@@ -123,9 +135,9 @@ fi
 # CAS HISTOGRAMME
 
 
-if [ "$1" = "histo" ]; then
+if [ "$commande" = "histo" ]; then
 
-    typeH=$2
+    typeH="$option"
 
     echo "Génération histogramme ($typeH)"
 
@@ -182,12 +194,12 @@ if [ "$1" = "leaks" ]; then
 
 fi
 
-# Temps total (calcul et affiche la durée en secondes)
+# Temps total (calcul et affiche la durée en millisecondes)
 
-end_time=$(date +%s)
+end_time=$(date +%s%3N)
 duration=$(( end_time - start_time ))
 
-echo "Temps total : ${duration}.0 sec"
+echo "Temps total : ${duration} ms"
 
 exit 0
 
