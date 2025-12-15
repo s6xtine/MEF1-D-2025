@@ -69,5 +69,3 @@ Lors de l'exécution du programme, vous pouvez choisir parmi les options suivant
 ## Auteur
 - Projet réalisé par Deschamps, Lechevallier, 
 
-## Licence
-Ce projet est sous licence MIT.

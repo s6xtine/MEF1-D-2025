@@ -161,7 +161,7 @@ void histo_real(const char *csv){
 			racine = insertionAVL(racine, strdup(col3), &h, 0, volume_reel);
 		}
 	}
-	flcose(entree);
+	fclose(entree);
 
 	FILE *sortie = fopen("vol_real.dat", "w");
 	if (sortie == NULL) {

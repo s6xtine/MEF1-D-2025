@@ -48,4 +48,6 @@ void parcoursprefixe(Arbre* a, FILE* fichier);
 
 void freeAVL(Arbre *racine);
 
+void parcoursInverse(Arbre *a, FILE *fichier);
+
 #endif
