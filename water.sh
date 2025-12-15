@@ -1,25 +1,6 @@
 #!/bin/bash	# le script s’exécute avec bash
 
 
-# Initialisation des fichiers
-
-inputFile='./data/c-wildwater_v0.dat'		# fichier de données en entrée
-# Ne pas créer le fichier s'il existe déjà
-if [ ! -f "$inputFile" ]; then
-    echo "Erreur : fichier $inputFile introuvable"
-    exit 1
-fi		
-
-outputFile='./sortie.csv'
-> "$outputFile"
-
-tempFile='./tmp.csv'
-> "$tempFile"
-
-histoFile=""	# variable vide initialisée
-leaksFile="./leaks.dat"
-> "$leaksFile"
-
 start_time=$(date +%s%3N)	# mémorise l’heure du début en milliseconde
 
 # vérification de l'installation gnuplot 
@@ -64,9 +45,9 @@ verification_arg(){
     aide
     exit 1
 fi
-
-commande="$1"
-option="$2"
+inputFile="$1"
+commande="$2"
+option="$3"
 
 if [ ! -f "$inputFile" ]; then
     echo "Erreur : fichier de données introuvable : $inputFile"
@@ -81,7 +62,7 @@ fi
                 echo "Erreur : type histo manquant"
                 return 2
             fi
-            if [ $# -ne 2 ]; then
+            if [ $# -ne 3 ]; then
                 echo "Erreur : nombre d'arguments incorrect"
                 return 6
             fi
@@ -97,7 +78,7 @@ fi
                 echo "Erreur : identifiant manquant"
                 return 4
             fi
-            if [ $# -ne 2 ]; then
+            if [ $# -ne 3 ]; then
                 echo "Erreur : nombre d'arguments incorrect"
                 return 7
             fi
@@ -113,7 +94,7 @@ fi
 }
 
 
-verification_arg $@
+verification_arg "$@"
 ret=$?	# récupère le code de retour de la fonction
 
 if (( ret != 0 )); then	# si différent on affiche l’aide et on sort
@@ -127,7 +108,7 @@ fi
 
 make
 if [ $? -ne 0 ]; then
-    echo "Erreur : compilation échoué"
+    echo "Erreur : compilation échouée"
     exit 10
 fi
 
@@ -141,7 +122,7 @@ if [ "$commande" = "histo" ]; then
 
     echo "Génération histogramme ($typeH)"
 
-    ./wildwater histo "$typeH"
+    ./wildwater histo "$typeH" "$inputFile"
 
     if [ $? -ne 0 ]; then
         echo "Erreur exécution programme C"
@@ -155,18 +136,38 @@ if [ "$commande" = "histo" ]; then
         exit 12
     fi
 
+    tail -n +2 "$histoFile" | sort -t';' -k2 -nr | head -10 > top10.dat
+    tail -n +2 "$histoFile" | sort -t';' -k2 -n  | head -50 > bottom50.dat
+
+
     if [ "$GNUPLOT_AVAILABLE" = true ]; then
         echo "Génération image ..."
-        gnuplot <<EOF	// lance gnuplot pour créer un PNG
-set terminal png size 1200,800
-set output "vol_${typeH}.png"
-set title "Histogramme ($typeH)"
+        gnuplot <<EOF	# lance gnuplot pour créer un PNG
+set datafile separator ";"
+set terminal png size 1800,1000
+set style data histograms
+set style fill solid border -1
+set boxwidth 0.9
+set grid
+set xtics rotate by -45 font ",8"
+set key off
+
+set output "vol_${typeH}_top10.png"
+set title "Top 10 des plus grandes usines ($typeH)"
 set xlabel "Usines"
-set ylabel "Volume (k.m3)"
-set xtics rotate by -45
-plot "$histoFile" using 2:xtic(1) with boxes title "$typeH"
+set ylabel "Volume (M.m³ / an)"
+plot "top10.dat" using 2:xtic(1)
+
+set output "vol_${typeH}_bottom50.png"
+set title "50 plus petites usines ($typeH)"
+set xlabel "Usines"
+set ylabel "Volume (M.m³ / an)"
+plot "bottom50.dat" using 2:xtic(1)
 EOF
-        echo "✓ Image créée : vol_${typeH}.png"
+       echo "✓ Images créées :"
+       echo "  - vol_${typeH}_top10.png"
+       echo "  - vol_${typeH}_bottom50.png"
+
     else
         echo "⚠ gnuplot non disponible → pas d'image PNG générée"
         echo "   Données disponibles dans : $histoFile"
@@ -177,13 +178,13 @@ fi
 
 # CAS LEAKS
 
-if [ "$1" = "leaks" ]; then
+if [ "$commande" = "leaks" ]; then
 
-    usine="$2"
+    usine="$option"
 
     echo "Calcul des fuites pour : $usine"
 
-    ./wildwater leaks "$usine"	# exécution du fichier
+    ./wildwater leaks "$usine" "$inputFile"	# exécution du fichier
 
     if [ $? -ne 0 ]; then
         echo "Erreur programme C"
