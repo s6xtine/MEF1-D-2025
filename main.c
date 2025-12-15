@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "noeud.h"
+#include "AVL.h" // Inclusion pour utiliser les fonctions AVL
+#include "histo.h" // Inclusion pour utiliser les fonctions d'histogramme
 
 int main() {
     Noeud *racine = NULL;
@@ -32,18 +34,39 @@ int main() {
         }
     }
 
-    // Exemple de traitement : écrire les données dans le fichier de sortie
-    fprintf(sortie, "ID\tVolume Amont\tFuite\n");
-    Liste *enfant = racine->enfant;
-    while (enfant) {
-        fprintf(sortie, "%s\t%.2f\t%.2f\n", enfant->enfant->usine->id, enfant->enfant->volume_amont, enfant->enfant->fuite);
-        enfant = enfant->suiv;
-    }
+
 
     // Libération de la mémoire
     libererNoeud(racine);
     fclose(entree);
     fclose(sortie);
 
+    int choix;
+    printf("Quel histogramme voulez-vous afficher ?\n");
+    printf("1. Histogramme des 10 plus gros volumes\n");
+    printf("2. Histogramme des 10 plus grandes fuites\n");
+    printf("3. Histogramme personnalisé\n");
+    printf("Entrez votre choix (1-3) : ");
+    scanf("%d", &choix);
+
+    switch (choix) {
+        case 1:
+            printf("Génération de l'histogramme des 10 plus gros volumes...\n");
+            histo_max("data/c-wildwater_v0.dat");
+            break;
+        case 2:
+            printf("Génération de l'histogramme des 10 plus grandes fuites...\n");
+            histo_fuites("data/c-wildwater_v0.dat");
+            break;
+        case 3:
+            printf("Génération de l'histogramme personnalisé...\n");
+            // Appeler une fonction pour un histogramme personnalisé si nécessaire
+            break;
+        default:
+            printf("Choix invalide. Veuillez entrer un nombre entre 1 et 3.\n");
+            return EXIT_FAILURE;
+    }
+
+    printf("Histogramme généré avec succès. Consultez les fichiers de sortie correspondants.\n");
     return 0;
 }
