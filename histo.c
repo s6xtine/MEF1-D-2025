@@ -7,7 +7,6 @@
 
 /*
  * histo_max:
- *   Les séparateurs acceptés sont ',' ou ';' ou espace/tab (tcheker les \t\r\n ???)
  *   Implémentation permissive : ignore les lignes mal formées (peut etre changer ca ?)
 */
 
@@ -65,5 +64,60 @@ void histo_max(const char *csv){
 	parcoursInverse(racine, sortie);
 	
     fclose(sortie);
+	freeAVL(racine);
+}
+
+
+void histo_src(const char *csv){
+	if(csv == NULL){
+		return;
+	}
+
+	FILE *entree = fopen(csv, "r");  //ouvre le fichier csv en lecture
+	if (entree == NULL) {
+		perror("fopen csv");
+		return;
+	}
+
+	Arbre *racine = NULL;  //initialise la racine de l'AVL des usines
+	int h = 0;  //sert à l'équilibrage de l'AVL, hauteur initiale
+	char ligne[2048];  //stocke les lignes lues du fichier
+
+	while (fgets(ligne, sizeof(ligne), entree)){  //lecture du fichier ligne par ligne
+
+		char *sauveptr = NULL;
+
+		//colonnes du fichier csv
+		char *col1 = strtok_r(ligne, ";", &sauveptr);
+		char *col2 = strtok_r(NULL, ";", &sauveptr);
+		char *col3 = strtok_r(NULL, ";", &sauveptr);
+		char *col4 = strtok_r(NULL, ";", &sauveptr);
+		char *col5 = strtok_r(NULL, ";", &sauveptr);
+
+		if(col1 == NULL || col2 == NULL || col3 == NULL || col4 == NULL || col5 == NULL){
+			continue; 
+		}
+
+		//Source -> Usine
+		if(strcmp(col1, "-") != 0 && strcmp(col2, "-") != 0 && strcmp(col3, "-") != 0 && strcmp(col4, "-") != 0 && strcmp(col5, "-") != 0){
+			long volume = atol(col4);
+
+			racine = insertionAVL(racine, strdup(col3), volume, &h); //insertion/maj AVL
+		}
+	}
+	fclose(entree);
+
+	FILE *sortie = fopen("vol_src.dat", "w");  //ouverture du fichier vol_src.dat en ecriture
+	if (sortie == NULL) {
+		perror("fopen vol_src.dat");
+		freeAVL(racine);
+		return;
+	}
+
+	fprintf(sortie, "identifiant;source volume\n");
+
+	parcoursInverse(racine, sortie);
+
+	fclose(sortie);
 	freeAVL(racine);
 }

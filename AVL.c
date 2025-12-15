@@ -123,38 +123,44 @@ Arbre* equilibrage(Arbre *a){    //reequilibre en cas de desequillibrage
     }
     return a; 
 }
-Arbre* insertionAVL (Arbre* a, int id_station ,int *h, long int capa, long int conso){ //insert un nouveau noeud et fait la somme
+Arbre* insertionAVL (Arbre* a, char* id_station ,int *h, long int capa, long int conso){ //insert un nouveau noeud et fait la somme
     if (a==NULL){
         *h=1;
-        a  =  creation(id_station); //si l'arbre n'existe pas on cree un nouveau noeud
-        a->capacite_total+=capa; //somme de la capacité si l'arbre
-        a->conso_total+=conso; //somme de la consommation 
+
+        a = creation(id_station); //si l'arbre n'existe pas on cree un nouveau noeud
+        a->capacite_total = capa;
+        a->conso_total = conso;
+        a->equilibre = 0; //equilibre initial
+        a->gauche = a->droit = NULL;
+
         return a;
     }
-    else if(id_station == a->id_station){ //si c'est l'identifiant de la station qu'on cherche on fait aussi la somme
-        a->capacite_total+=capa;
-        a->conso_total+=conso;
+
+    int cmp = strcmp(id_station, a->id_station);
+
+    if(cmp == 0){ //id déjà existant
+        a->capacite_total += capa; //si le noeud existe on fait la somme
+        a->conso_total += conso;
+        *h = 0; //on change pas la hauteur
         return a;
     }
-    else if(id_station< a->id_station){
-        a->gauche=insertionAVL(a->gauche, id_station, h, capa, conso);
-        *h=-*h;
+    if(cmp < 0){ //inser à gauche
+        a->gauche = insertionAVL(a->gauche, id_station, h, capa, conso);
+        *h = -*h; //on inverse la hauteur
     }
-    else if(id_station > a->id_station){
-        a->droit=insertionAVL(a->droit, id_station, h, capa, conso);
+    else{ //inser à droite
+        a->droit = insertionAVL(a->droit, id_station, h, capa, conso);
     }
-    else{
-        *h=0;
-        return a;
-    }
-    if(*h!=0){
-        a->equilibre=a->equilibre + *h;
-        a=equilibrage(a);
-        if(a->equilibre==0){
-            *h=0;
+
+    if(*h != 0){ //maj de l'équilibre
+        a->equilibre += *h;
+        a = equilibrage(a);
+
+        if(a->equilibre == 0){
+            *h = 0;
         }
         else{
-            *h=1;
+            *h = 1;
         }
     }
     return a;
