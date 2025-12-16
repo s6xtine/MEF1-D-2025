@@ -1,6 +1,18 @@
 #!/bin/bash	# le script s’exécute avec bash
 
+# Initialisation des fichiers
 
+minmaxFile='./lv_all_minmax.txt'
+> "$minmaxFile"
+outputFile='./sortie.txt'
+> "$outputFile"
+
+dataFile="$1"
+inputFile='./entree.txt'
+> "$inputFile"
+
+tempFile='./tmp.txt'
+> "$tempFile"
 start_time=$(date +%s%3N)	# mémorise l’heure du début en milliseconde
 
 # vérification de l'installation gnuplot 
@@ -45,7 +57,7 @@ verification_arg(){
     aide
     exit 1
 fi
-inputFile="$1"
+
 commande="$2"
 option="$3"
 
@@ -122,7 +134,7 @@ if [ "$commande" = "histo" ]; then
 
     echo "Génération histogramme ($typeH)"
 
-    ./wildwater histo "$typeH" "$inputFile"
+    ./wildwater histo "$typeH" "$dataFile"
 
     if [ $? -ne 0 ]; then
         echo "Erreur exécution programme C"
@@ -184,7 +196,7 @@ if [ "$commande" = "leaks" ]; then
 
     echo "Calcul des fuites pour : $usine"
 
-    ./wildwater leaks "$usine" "$inputFile"	# exécution du fichier
+    ./wildwater leaks "$usine" "$dataFile"	# exécution du fichier
 
     if [ $? -ne 0 ]; then
         echo "Erreur programme C"
