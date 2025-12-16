@@ -2,16 +2,16 @@
 
 # Initialisation des fichiers
 
-minmaxFile='./lv_all_minmax.txt'
+minmaxFile='./lv_all_minmax.csv'
 > "$minmaxFile"
-outputFile='./sortie.txt'
+outputFile='./sortie.csv'
 > "$outputFile"
 
 dataFile="$1"
-inputFile='./entree.txt'
+inputFile='./entree.csv'
 > "$inputFile"
 
-tempFile='./tmp.txt'
+tempFile='./tmp.csv'
 > "$tempFile"
 start_time=$(date +%s%3N)	# mémorise l’heure du début en milliseconde
 
