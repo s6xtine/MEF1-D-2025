@@ -67,5 +67,5 @@ Lors de l'exécution du programme, vous pouvez choisir parmi les options suivant
 - `gnuplot` : Assurez-vous que `gnuplot` est installé pour générer les graphiques.
 
 ## Auteur
-- Projet réalisé par Deschamps, Lechevallier, 
+- Projet réalisé par Deschamps Sixtine, Lechevallier Morgan, El Kharroubi Assia
 
