@@ -30,8 +30,8 @@ fi
 
 aide(){
     echo "Utilisation :"
-    echo " $0 histo <max|src|real>"
-    echo " $0 leaks <identifiant_usine>"
+    echo " histo <max|src|real>"
+    #echo " $0 leaks <identifiant_usine>"
     echo " $0 -h : Affiche cette aide"
     echo
     echo "Commandes :"
@@ -39,13 +39,14 @@ aide(){
     echo "- leaks <identifiant usine> : Calcul les pertes d'une usine"
    
 }
-
+commande="$2"
+option="$3"
 # Vérification des arguments
 
 verification_arg(){
 
     # option aide
-   if [ "$1" = "-h" ] || [ "$2" = "-h" ] || [ "$3" = "-h" ]; then
+   if [ "$1" = "$0 ] || [ "$2" = "$0" ] || [ "$3" = "$0" ]; then
    aide
         exit 0
     fi
@@ -58,8 +59,6 @@ verification_arg(){
     exit 1
 fi
 
-commande="$2"
-option="$3"
 
 if [ ! -f "$inputFile" ]; then
     echo "Erreur : fichier de données introuvable : $inputFile"
