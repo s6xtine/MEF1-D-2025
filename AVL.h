@@ -4,7 +4,7 @@
 #include "noeud.h" // Inclusion de la structure Noeud pour utilisation dans AVL
 
 typedef struct arbre{
-    int id_station;
+    char* id_station;
     struct arbre* gauche;
     struct arbre* droit;
     int equilibre;
@@ -12,7 +12,7 @@ typedef struct arbre{
     long int conso_total;
 }Arbre;
 
-Arbre* creation(int s);
+Arbre* creation(char* s);
 
 int estVide(Arbre* racine);
 
@@ -40,7 +40,7 @@ Arbre* doublerotationgauche(Arbre* a);
 
 Arbre* equilibrage(Arbre *a);
 
-Arbre* insertionAVL (Arbre* a, int id_station ,int *h, long int capa, long int conso);
+Arbre* insertionAVL (Arbre* a, char* id_station ,int *h, long int capa, long int conso);
 
 void verificationalloc();
 

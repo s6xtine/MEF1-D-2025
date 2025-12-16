@@ -2,9 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 //Fonctions pour la partie de l'arbre binaire equilibrer 
-Arbre* creation(int s){ //creation d'un nouveau noeud dans l'arbre 
+Arbre* creation(char* s){ //creation d'un nouveau noeud dans l'arbre 
     Arbre* noeud=malloc(sizeof(Arbre));
     if(noeud==NULL){
         exit(1);
@@ -175,7 +176,7 @@ void verificationalloc() { // alloue la place et verifie si l'allocation ait reu
 }
 void parcoursprefixe(Arbre* a, FILE* fichier){ //fait un parcours prefixe sur le AVL
     if(a!=NULL){
-    fprintf(fichier, "%d:%ld:%ld\n", a->id_station, a->capacite_total, a->conso_total);
+    fprintf(fichier, "%s:%ld:%ld\n", a->id_station, a->capacite_total, a->conso_total);
     parcoursprefixe(a->gauche, fichier);
     parcoursprefixe(a->droit, fichier);
     }
@@ -194,6 +195,6 @@ void parcoursInverse(Arbre* a, FILE* f){ //fait un parcours inverse sur le AVL
         return;
     }
     parcoursInverse(a->droit, f);
-    fprintf(f, "%d:%ld:%ld\n", a->id_station, a->capacite_total, a->conso_total);
+    fprintf(f, "%s:%ld:%ld\n", a->id_station, a->capacite_total, a->conso_total);
     parcoursInverse(a->gauche, f);
 }

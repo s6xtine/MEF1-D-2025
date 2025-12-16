@@ -47,7 +47,7 @@ void histo_max(const char *csv){
                 continue;  
             }
             long capacite = atol(col4);
-            racine = insertionAVL(racine, id, capacite, &h);
+            racine = insertionAVL(racine, id, &h, capacite, 0 );
         }
 	}
 
@@ -102,7 +102,7 @@ void histo_src(const char *csv){
 		if(strcmp(col1, "-") != 0 && strcmp(col2, "-") != 0 && strcmp(col3, "-") != 0 && strcmp(col4, "-") != 0 && strcmp(col5, "-") != 0){
 			long volume = atol(col4);
 
-			racine = insertionAVL(racine, strdup(col3), volume, &h); //insertion/maj AVL
+			racine = insertionAVL(racine, strdup(col3), &h, volume,0 ); //insertion/maj AVL
 		}
 	}
 	fclose(entree);
