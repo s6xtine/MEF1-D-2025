@@ -3,49 +3,71 @@
 #include <string.h>
 #include <stdio.h>
 
-static char *strdup_safe(const char *s) {
-    if (!s) return NULL;
-    size_t len = strlen(s) + 1;
-    char *r = malloc(len);
-    if (!r) return NULL;
-    memcpy(r, s, len);
-    return r;
-}
 
+
+// Implémentation de creationNoeud (ajustement de l'initialisation)
 Noeud *creationNoeud(const char *id, double fuite) {
-    Noeud *n = malloc(sizeof(Noeud));
-    if (!n) return NULL;
+    Noeud *nouv = malloc(sizeof(Noeud));
+    if (!nouv) return NULL;
 
-    // Initialisation de l'usine comme NULL par défaut
-    n->usine = NULL;
+    // Initialisation des champs du Noeud
+    nouv->volume_amont = 0.0;
+    nouv->fuite = fuite;
+    nouv->enfants = NULL;
+    nouv->fg = NULL;
+    nouv->fd = NULL;
+    nouv->hauteur = 1;
 
-    // Si un identifiant est fourni, créer une usine associée
-    if (id) {
-        n->usine = malloc(sizeof(Usine));
-        if (!n->usine) {
-            free(n);
-            return NULL;
+    if (id != NULL) {
+        nouv->usine = malloc(sizeof(Usine));
+        if (nouv->usine) {
+            // CORRECTION : Utilisation de ->id au lieu de ->id_usine
+            nouv->usine->id = strdup(id); 
+            nouv->usine->capacite_max = 0.0;
+            nouv->usine->volume_capte = 0.0;
+            nouv->usine->volume_reel = 0.0;
         }
-        n->usine->id = strdup_safe(id);
-        n->usine->capacite_max = 0.0;
-        n->usine->volume_capte = 0.0;
-        n->usine->volume_reel = 0.0;
+    } else {
+        nouv->usine = NULL;
     }
 
-    n->fuite = fuite;
-    n->volume_amont = 0.0;
-    n->fg = NULL;
-    n->fd = NULL;
-    n->hauteur = 1;
-    return n;
+    return nouv;
+}
+void ajouterEnfant(Noeud* parent, Noeud* enfant) {
+    if (!parent || !enfant) return;
+
+    // On crée un maillon de la liste chaînée des enfants
+    Fils* nouv_fils = malloc(sizeof(Fils));
+    if (!nouv_fils) return;
+
+    nouv_fils->enfant = enfant;
+    
+    // Insertion en tête de liste
+    nouv_fils->suivant = parent->enfants;
+    parent->enfants = nouv_fils;
+}
+// NOUVELLE FONCTION : Pour libérer la liste des enfants (mais pas les noeuds eux-mêmes)
+void libererEnfants(Fils *liste) {
+    Fils *courant = liste;
+    Fils *temp;
+    while (courant != NULL) {
+        temp = courant;
+        courant = courant->suivant;
+        // On libère le maillon de la liste, PAS le Noeud pointé par 'enfant'
+        free(temp); 
+    }
 }
 
+// Modification de libererNoeud pour libérer aussi la liste des enfants
 void libererNoeud(Noeud *racine) {
     if (!racine) return;
 
-    // Libération récursive des sous-arbres
+    // Libération récursive des sous-arbres (pour la partie AVL d'indexation, si elle est utilisée)
     libererNoeud(racine->fg);
     libererNoeud(racine->fd);
+
+    // Libération de la liste des enfants (Fils)
+    libererEnfants(racine->enfants);
 
     // Libération de l'usine associée (si présente)
     if (racine->usine) {

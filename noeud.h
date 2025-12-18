@@ -1,10 +1,8 @@
 #ifndef NOEUD_H
 #define NOEUD_H
 
-// Structure représentant une usine de traitement d'eau
-// Une usine est optionnelle et contient :
-// - Sa capacité maximale de traitement
-// - Le volume capté et traité
+// ... (Structure Usine inchangée) ...
+
 typedef struct Usine {
     char *id;              // Identifiant unique de l'usine
     double capacite_max;   // Capacité maximale de traitement
@@ -12,25 +10,37 @@ typedef struct Usine {
     double volume_reel;    // Volume réellement traité
 } Usine;
 
+// Déclaration anticipée de la structure Noeud
+typedef struct Noeud Noeud;
+
+// Structure pour lier un Noeud à ses enfants (liste chaînée)
+typedef struct Fils {
+    Noeud *enfant;         // Pointeur vers le noeud enfant
+    struct Fils *suivant;  // Pointeur vers le maillon suivant de la liste
+} Fils;
+
+
 // Structure représentant un noeud dans le réseau
-// Un noeud peut contenir :
-// - Une usine (optionnelle)
-// - Un pourcentage de fuite
-// - Le volume d'eau en amont
-// - Les sous-arbres gauche et droit pour AVL
-// - La hauteur pour AVL
-typedef struct Noeud {
+// Les champs fg, fd, hauteur sont utilisés pour l'AVL d'indexation
+struct Noeud {
     Usine *usine;          // Usine associée (peut être NULL)
     double fuite;          // Pourcentage de fuite sur le tronçon parent -> ce noeud
     double volume_amont;   // Volume d'eau en amont (en milliers de m3)
-
-    struct Noeud *fg;    // Sous-arbre gauche (AVL)
-    struct Noeud *fd;   // Sous-arbre droit (AVL)
+    
+    Fils *enfants;         // NOUVEAU : Liste des nœuds enfants (sorties)
+    
+    // Champs AVL pour l'indexation rapide
+    Noeud *fg;             // Sous-arbre gauche (AVL)
+    Noeud *fd;             // Sous-arbre droit (AVL)
     int hauteur;
-} Noeud;
+};
 
 // Fonctions associées aux noeuds
 Noeud *creationNoeud(const char *id, double fuite);
 void libererNoeud(Noeud *racine);
+// NOUVELLE FONCTION : pour ajouter un enfant à un noeud
+void ajouterEnfant(Noeud *parent, Noeud *enfant);
+// NOUVELLE FONCTION : pour libérer la liste des enfants
+void libererEnfants(Fils *liste);
 
 #endif // NOEUD_H
