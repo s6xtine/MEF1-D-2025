@@ -9,7 +9,7 @@ Arbre* creation(char* s){ //creation d'un nouveau noeud dans l'arbre
     if(noeud==NULL){
         exit(1);
     }
-    noeud->id_station=s;
+    noeud->id_station=strdup(s);
     noeud->gauche=NULL;
     noeud->droit=NULL;
     noeud->equilibre=0;

@@ -54,71 +54,62 @@ static double calculerFuitesRecursif(Noeud *noeud, double volume_entrant) {
 // --- Fonctions d'Histogramme ---
 
 void histo_max(const char *csv){
-	if (csv == NULL){
+    if (csv == NULL) return;
+
+    FILE *entree = fopen(csv, "r");
+    if (entree == NULL) {
+        perror("fopen csv");
         return;
     }
 
-    FILE *entree = fopen(csv, "r");
-	if (entree == NULL) {
-		perror("fopen csv");
-		return;
-	}
-
-	Arbre *racine = NULL;
-	char ligne[2048];
+    Arbre *racine = NULL;
+    char ligne[2048];
     int h = 0;
 
-	// En-tête pour la sortie CSV
-	const char *HEADER = "identifier;max volume (k.m³.year⁻¹)\n";
-    
-	while (fgets(ligne, sizeof(ligne), entree)){
-		char *sauveptr = NULL;
+    while (fgets(ligne, sizeof(ligne), entree)){
+        char *sauveptr = NULL;
 
-		char *col1 = strtok_r(ligne, ";", &sauveptr);
-		char *col2 = strtok_r(NULL, ";", &sauveptr); // ID Usine
-		char *col3 = strtok_r(NULL, ";", &sauveptr);
+        char *col1 = strtok_r(ligne, ";", &sauveptr);
+        char *col2 = strtok_r(NULL, ";", &sauveptr); // ID Usine
+        char *col3 = strtok_r(NULL, ";", &sauveptr);
         char *col4 = strtok_r(NULL, ";", &sauveptr); // Capacité Max
         char *col5 = strtok_r(NULL, ";", &sauveptr);
 
-        if(col1 == NULL || col2 == NULL || col3 == NULL || col4 == NULL || col5 == NULL){
+        // --- SÉCURITÉ : Filtrage des colonnes et du tiret parasite ---
+        if(col1 == NULL || col2 == NULL || col3 == NULL || col4 == NULL || strcmp(col2, "-") == 0){
             continue; 
         }
 
-        // Ligne USINE (décrivant le noeud) : - ; [ID Usine] ; - ; [Capacité] ; -
+        // Ligne USINE : identifiée par "-" en col1 et col3
         if(strcmp(col1, "-") == 0 && strcmp(col3, "-") == 0) {
             
-            long capacite = atol(col4); // En milliers de m³ (k.m³)
+            long capacite = atol(col4);
 
             if (capacite > 0) {
-                char *id = strdup(col2); // Allocation de l'identifiant
-                if(id == NULL){
-                    continue; // Erreur d'allocation
-                }
-                
-                // Insertion dans l'AVL : capacite est dans capa, pas d'indexation (NULL)
-                racine = insertionAVL(racine, id, &h, capacite, 0, NULL );
+                // On passe col2 directement. Pas de strdup ici pour éviter les SegFaults
+                // et les fuites mémoire si l'ID existe déjà.
+                racine = insertionAVL(racine, col2, &h, capacite, 0, NULL);
             }
         }
-	}
+    }
+    fclose(entree);
 
-	fclose(entree);
+    FILE *sortie = fopen("vol_max.dat", "w");
+    if (sortie == NULL) {
+        perror("fopen vol_max.dat");
+        freeAVL(racine);
+        return;
+    }
 
-	FILE *sortie = fopen("vol_max.dat", "w");
-	if (sortie == NULL) {
-		perror("fopen vol_max.dat");
-		freeAVL(racine);
-		return;
-	}
-    fprintf(sortie, "%s", HEADER);
+    // Écriture de l'en-tête (format strict pour gnuplot)
+    fprintf(sortie, "identifier;max volume (k.m3.year-1)\n");
 
-	// Le parcours inverse réalise le tri alphabétique inverse
-	parcoursInverse(racine, sortie);
-	
+    // Appel de ton parcoursInverse qui fait le travail proprement
+    parcoursInverse(racine, sortie);
+    
     fclose(sortie);
-	freeAVL(racine);
+    freeAVL(racine);
 }
-
-
 void histo_src(const char *csv){
 	if(csv == NULL){
 		return;
@@ -185,71 +176,58 @@ void histo_src(const char *csv){
 }
 
 void histo_real(const char *csv){
-	if(csv == NULL){
-		return;
-	}
-	FILE *entree = fopen(csv, "r");
-	if (entree == NULL) {
-		perror("fopen csv");
-		return;
-	}
-
-	Arbre *racine = NULL;
-	int h = 0;
-	char ligne[2048];
+    if(csv == NULL) return;
     
-	const char *HEADER = "identifier;real volume (k.m³.year⁻¹)\n";
+    FILE *entree = fopen(csv, "r");
+    if (entree == NULL) {
+        perror("fopen csv");
+        return;
+    }
 
-	while(fgets(ligne, sizeof(ligne), entree)){
-		char *sauveptr = NULL;
+    Arbre *racine = NULL;
+    int h = 0;
+    char ligne[2048];
+    
+    while(fgets(ligne, sizeof(ligne), entree)){
+        char *sauveptr = NULL;
+        char *col1 = strtok_r(ligne, ";", &sauveptr);
+        char *col2 = strtok_r(NULL, ";", &sauveptr);
+        char *col3 = strtok_r(NULL, ";", &sauveptr); // ID Usine
+        char *col4 = strtok_r(NULL, ";", &sauveptr); // Volume
+        char *col5 = strtok_r(NULL, ";", &sauveptr); // Fuite
 
-		char *col1 = strtok_r(ligne, ";", &sauveptr);
-		char *col2 = strtok_r(NULL, ";", &sauveptr);
-		char *col3 = strtok_r(NULL, ";", &sauveptr); // ID Usine
-		char *col4 = strtok_r(NULL, ";", &sauveptr); // Volume Capté
-		char *col5 = strtok_r(NULL, ";", &sauveptr); // Fuite
+        // Filtrage strict des colonnes et de l'identifiant parasite "-"
+        if(col1 == NULL || col3 == NULL || col4 == NULL || col5 == NULL || strcmp(col3, "-") == 0){
+            continue; 
+        }
 
-		if(col1 == NULL || col2 == NULL || col3 == NULL || col4 == NULL || col5 == NULL){
-			continue; 
-		}
-
-		// Ligne SOURCE -> USINE
-		if(strcmp(col1, "-") == 0 && strcmp(col4, "-") != 0 && strcmp(col5, "-") != 0){
-			long volume = atol(col4);
-			double fuite = atof(col5); 
+        // Vérification de la structure : Ligne SOURCE (col1 == "-")
+        if(strcmp(col1, "-") == 0 && strcmp(col4, "-") != 0 && strcmp(col5, "-") != 0){
+            long volume = atol(col4);
+            double fuite = atof(col5); 
 
             if (volume > 0) {
-                // Calcul du volume réel qui atteint l'usine : V × (1 − F / 100)
                 long volume_reel = (long)(volume * (1.0 - fuite / 100.0)); 
-
-                char *id = strdup(col3); // L'ID de l'usine est la clé
-                if(id == NULL){
-                    continue;
-                }
-
-                // Insertion/Maj AVL : le volume réel est cumulé dans conso_total
-                racine = insertionAVL(racine, id, &h, 0, volume_reel, NULL);
+                
+                // --- SÉCURITÉ AVL ---
+                // On passe col3 directement. C'est la fonction insertionAVL 
+                // qui doit faire le strdup UNIQUEMENT lors de la création d'un nouveau nœud.
+                racine = insertionAVL(racine, col3, &h, 0, volume_reel, NULL);
             }
-		}
-	}
-	fclose(entree);
+        }
+    }
+    fclose(entree);
 
-	FILE *sortie = fopen("vol_real.dat", "w");
-	if (sortie == NULL) {
-		perror("fopen vol_real.dat");
-		freeAVL(racine);
-		return;
-	}
-
-	fprintf(sortie, "%s", HEADER);
+    // Ouverture en "w" car le Shell n'écrit plus l'en-tête (tu l'as mis dans le C)
+    FILE *sortie = fopen("vol_real.dat", "w");
+    if (sortie != NULL) {
+        fprintf(sortie, "identifier;real volume (k.m3.year-1)\n");
+        parcoursInverse(racine, sortie);
+        fclose(sortie);
+    }
     
-	parcoursInverse(racine, sortie);
-	fclose(sortie);
-	freeAVL(racine);
+    freeAVL(racine);
 }
-
-// --- Fonction principale 'leaks' ---
-
 void histo_leaks(const char *csv, const char *id_usine_cible) {
     if (csv == NULL || id_usine_cible == NULL) return;
 
