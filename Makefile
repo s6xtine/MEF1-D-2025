@@ -1,50 +1,23 @@
-# Nom de l'exécutable final
-TARGET = histo
+all: histo
 
-# Compilateur et options
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -g
+AVL.o: AVL.c AVL.h
+	gcc -c AVL.c -o AVL.o
 
-# Dossier pour les fichiers objets
-BUILD = build
+noeud.o: noeud.c noeud.h
+	gcc -c noeud.c -o noeud.o
 
-# Liste des fichiers source et des objets correspondants
-SRC = main.c histo.c AVL.c noeud.c
-OBJ = $(SRC:%.c=$(BUILD)/%.o)
+histo.o: histo.c histo.h AVL.h noeud.h
+	gcc -c histo.c -o histo.o
 
-# Cible par défaut : construit l'exécutable
-all: $(TARGET)
+main.o: main.c AVL.h histo.h
+	gcc -c main.c -o main.o
 
-# Édition de liens : crée l'exécutable à partir des objets
-$(TARGET): $(OBJ)
-	$(CC) $(OBJ) -o $(TARGET)
+histo: AVL.o noeud.o histo.o main.o
+	gcc AVL.o noeud.o histo.o main.o -o histo
 
-# Compilation : crée les fichiers .o dans le dossier build/
-$(BUILD)/%.o: %.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# Crée le dossier build s'il n'existe pas
-$(BUILD):
-	mkdir -p $(BUILD)
-
-# --------- Cibles utilitaires ---------
-
-# Nettoyage des fichiers temporaires et de l'exécutable
 clean:
-	rm -rf $(BUILD) $(TARGET)
-	rm -f *.dat *.png
+	rm -f *.o test histo *.png *.dat *.csv
 
-# Reconstruction complète
 re: clean all
 
-# Exécute le script principal avec les graphiques
-water: $(TARGET)
-	chmod +x water.sh
-	./water.sh data/c-wildwater_v0.dat histo max
 
-# Exécute gnuplot via votre script de plot
-plot:
-	chmod +x plot.sh
-	./plot.sh
-
-.PHONY: all clean re water plot
