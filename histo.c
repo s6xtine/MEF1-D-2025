@@ -4,9 +4,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h> // Pour utiliser round() ou pour les calculs float
-#include "histo.h" // Assurez-vous d'inclure votre propre .h
+#include "histo.h" 
 
-// --- Fonction récursive pour le mode 'leaks' ---
+
 
 // Fonction récursive pour propager l'eau dans le réseau en aval et sommer les fuites
 // Retourne la fuite totale générée sur ce tronçon et tous ses tronçons en aval (en k.m³).
@@ -16,14 +16,14 @@ static double calculerFuitesRecursif(Noeud *noeud, double volume_entrant) {
     // Le pourcentage de fuite est celui du TRONÇON AMONT -> NOEUD
     double fuite_pct = noeud->fuite; 
 
-    // 1. Calcul de la fuite absolue sur le tronçon menant à ce nœud (en k.m³)
+    // Calcul de la fuite absolue sur le tronçon menant à ce nœud (en k.m³)
     double fuite_absolue = volume_entrant * (fuite_pct / 100.0);
     double volume_sortant = volume_entrant - fuite_absolue;
     
-    // 2. Initialisation de la somme des fuites en aval
+    // Initialisation de la somme des fuites en aval
     double fuites_aval = 0.0;
 
-    // 3. Répartition et propagation vers les enfants
+    // Répartition et propagation vers les enfants
     Fils *courant = noeud->enfants;
     int nombre_enfants = 0;
     
@@ -35,7 +35,7 @@ static double calculerFuitesRecursif(Noeud *noeud, double volume_entrant) {
     
     // Si des enfants existent, on répartit le volume sortant
     if (nombre_enfants > 0) {
-        // Correction de l'erreur d'identifiant non déclaré (volume_pour_enfant)
+        
         // La quantité d'eau qui le traverse est répartie équitablement par les nœuds enfants.
         double volume_pour_enfant = volume_sortant / nombre_enfants; 
         
@@ -51,7 +51,7 @@ static double calculerFuitesRecursif(Noeud *noeud, double volume_entrant) {
     return fuite_absolue + fuites_aval;
 }
 
-// --- Fonctions d'Histogramme ---
+// Fonctions d'Histogramme 
 
 void histo_max(const char *csv){
     if (csv == NULL) return;
@@ -75,7 +75,7 @@ void histo_max(const char *csv){
         char *col4 = strtok_r(NULL, ";", &sauveptr); // Capacité Max
         char *col5 = strtok_r(NULL, ";", &sauveptr);
 
-        // --- SÉCURITÉ : Filtrage des colonnes et du tiret parasite ---
+        // Filtrage des colonnes et du tiret parasite 
         if(col1 == NULL || col2 == NULL || col3 == NULL || col4 == NULL || strcmp(col2, "-") == 0){
             continue; 
         }
@@ -104,7 +104,7 @@ void histo_max(const char *csv){
     // Écriture de l'en-tête (format strict pour gnuplot)
     fprintf(sortie, "identifier;max volume (k.m3.year-1)\n");
 
-    // Appel de ton parcoursInverse qui fait le travail proprement
+    // Appel de  parcoursInverse qui fait normalement le travail proprement
     parcoursInverse(racine, sortie);
     
     fclose(sortie);
@@ -209,7 +209,7 @@ void histo_real(const char *csv){
             if (volume > 0) {
                 long volume_reel = (long)(volume * (1.0 - fuite / 100.0)); 
                 
-                // --- SÉCURITÉ AVL ---
+                
                 // On passe col3 directement. C'est la fonction insertionAVL 
                 // qui doit faire le strdup UNIQUEMENT lors de la création d'un nouveau nœud.
                 racine = insertionAVL(racine, col3, &h, 0, volume_reel, NULL);
@@ -218,7 +218,7 @@ void histo_real(const char *csv){
     }
     fclose(entree);
 
-    // Ouverture en "w" car le Shell n'écrit plus l'en-tête (tu l'as mis dans le C)
+    // Ouverture en "w" car le Shell n'écrit plus l'en-tête 
     FILE *sortie = fopen("vol_real.dat", "w");
     if (sortie != NULL) {
         fprintf(sortie, "identifier;real volume (k.m3.year-1)\n");
@@ -228,7 +228,10 @@ void histo_real(const char *csv){
     
     freeAVL(racine);
 }
+
+
 void histo_leaks(const char *csv, const char *id_usine_cible) {
+    // Petit check de sécurité, si on n'a pas de fichier ou pas d'ID, on remballe.
     if (csv == NULL || id_usine_cible == NULL) return;
 
     FILE *entree = fopen(csv, "r");
@@ -242,20 +245,22 @@ void histo_leaks(const char *csv, const char *id_usine_cible) {
     char ligne[2048];
     char *sauveptr = NULL;
 
-    // PHASE 1 : Construction silencieuse du réseau
+    // PHASE 1 : On scanne le CSV pour reconstruire tout le réseau d'eau ---
     while (fgets(ligne, sizeof(ligne), entree)) {
         char temp_ligne[2048];
-        strcpy(temp_ligne, ligne);
+        strcpy(temp_ligne, ligne); // On fait une copie pour ne pas bousiller l'original
 
+        // On découpe la ligne en morceaux (les fameux tokens)
         char *token = strtok_r(temp_ligne, ";", &sauveptr); 
         char *col2 = strtok_r(NULL, ";", &sauveptr);
         char *col3 = strtok_r(NULL, ";", &sauveptr); 
         char *col4 = strtok_r(NULL, ";", &sauveptr);        
         char *col5 = strtok_r(NULL, ";", &sauveptr);        
 
+        // Si la ligne est foireuse ou que l'ID est un tiret, on passe à la suite.
         if (col2 == NULL || col3 == NULL|| strcmp(col2, "-") == 0) continue;
 
-        // CAS 1 : Définition Usine
+        // CAS 1 : C'est une usine. On l'ajoute à l'index et on lui colle sa capacité.
         if (strcmp(col3, "-") == 0 && col4 && strcmp(col4, "-") != 0) {
             Arbre *index = rechercherArbre(index_racine, col2);
             if (index == NULL) {
@@ -266,8 +271,9 @@ void histo_leaks(const char *csv, const char *id_usine_cible) {
                 index->ptr_noeud_reseau->usine->capacite_max = atof(col4);
             }
         } 
-        // CAS 2 : Apport Source -> Usine
+        // CAS 2 : C'est l'eau qui arrive direct de la source vers l'usine.
         else if (strcmp(token, "-") == 0 && col4 && strcmp(col4, "-") != 0 && col5 && strcmp(col5, "-") != 0) {
+            // On calcule ce qui arrive vraiment après la première fuite
             double volume_atteint = atof(col4) * (1.0 - atof(col5) / 100.0);
             Arbre *index = rechercherArbre(index_racine, col3);
             if (index == NULL) {
@@ -276,7 +282,7 @@ void histo_leaks(const char *csv, const char *id_usine_cible) {
             }
             if (index) index->ptr_noeud_reseau->volume_amont += volume_atteint;
         }
-        // CAS 3 : Distribution (Graphe)
+        // CAS 3 : C'est un tuyau entre deux points. On crée le lien "parent-enfant" dans notre graphe.
         else if (strcmp(col3, "-") != 0 && col5 && strcmp(col5, "-") != 0) {
             double fuite_troncon = atof(col5);
             Arbre *idx_aval = rechercherArbre(index_racine, col3);
@@ -300,37 +306,42 @@ void histo_leaks(const char *csv, const char *id_usine_cible) {
     }
     fclose(entree);
 
-    // PHASE 2 : Calcul des fuites
+    // PHASE 2 : Maintenant que le réseau est prêt, on cherche notre usine cible ---
     Arbre *index_cible = rechercherArbre(index_racine, id_usine_cible);
-    double fuite_finale = -1.0; 
+    double fuite_finale = -1.0; // Par défaut, on part sur "pas trouvé"
 
     if (index_cible != NULL) {
         double vol_init = index_cible->ptr_noeud_reseau->volume_amont;
         Fils *c = index_cible->ptr_noeud_reseau->enfants;
+        
+        // On compte combien de chemins partent de cette usine
         int n = 0;
         while(c) { n++; c = c->suivant; }
 
         if (n > 0 && vol_init > 0) {
             fuite_finale = 0.0;
             c = index_cible->ptr_noeud_reseau->enfants;
+            // On lance le calcul récursif : on divise le volume par le nombre d'enfants
             while(c) {
                 fuite_finale += calculerFuitesRecursif(c->enfant, vol_init / n);
                 c = c->suivant;
             }
         } else if (vol_init > 0) {
+            // Pas d'enfants ? Bah pas de fuites après l'usine.
             fuite_finale = 0.0; 
         }
     }
 
-    // PHASE 3 : Sortie historique
+    // PHASE 3 : On écrit le résultat dans l'historique ---
+    // On utilise "a" pour "append" afin de ne pas effacer ce qu'il y avait déjà
     FILE *f_out = fopen("leaks_history.dat", "a");
     if (f_out) {
         if (fuite_finale < 0) fprintf(f_out, "%s;-1\n", id_usine_cible);
-        else fprintf(f_out, "%s;%.3f\n", id_usine_cible, fuite_finale / 1000.0);
+        else fprintf(f_out, "%s;%.3f\n", id_usine_cible, fuite_finale / 1000.0); // On repasse en Mm3
         fclose(f_out);
     }
 
-    // PHASE 4 : Libération propre
-    libererReseauIndexe(index_racine); 
-    freeAVL(index_racine); 
+    
+    libererReseauIndexe(index_racine); // On libère les nœuds du réseau
+    freeAVL(index_racine); // On libère l'index AVL lui-même
 }

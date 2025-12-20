@@ -18,9 +18,9 @@ typedef struct arbre{
     
 }Arbre;
 
-// ... (Les autres déclarations restent les mêmes)
 
-// Mise à jour de la signature pour inclure le pointeur Noeud *
+
+
 Arbre* insertionAVL (Arbre* a, char* id_station ,int *h, long int capa, long int conso, Noeud *noeud_a_indexer);
 
 void verificationalloc();
@@ -28,7 +28,7 @@ void parcoursprefixe(Arbre* a, FILE* fichier);
 void freeAVL(Arbre *racine);
 void parcoursInverse(Arbre *a, FILE *fichier);
 
-// Déclaration de la fonction de recherche
+
 Arbre* rechercherArbre(Arbre* racine, const char* id); 
-void libererReseauIndexe(Arbre *racine); // <-- NOUVELLE DECLARATION
+void libererReseauIndexe(Arbre *racine); 
 #endif

@@ -5,7 +5,7 @@
 
 
 
-// Implémentation de creationNoeud (ajustement de l'initialisation)
+
 Noeud *creationNoeud(const char *id, double fuite) {
     Noeud *nouv = malloc(sizeof(Noeud));
     if (!nouv) return NULL;
@@ -21,7 +21,7 @@ Noeud *creationNoeud(const char *id, double fuite) {
     if (id != NULL) {
         nouv->usine = malloc(sizeof(Usine));
         if (nouv->usine) {
-            // CORRECTION : Utilisation de ->id au lieu de ->id_usine
+            //  Utilisation de ->id au lieu de ->id_usine
             nouv->usine->id = strdup(id); 
             nouv->usine->capacite_max = 0.0;
             nouv->usine->volume_capte = 0.0;
@@ -46,7 +46,7 @@ void ajouterEnfant(Noeud* parent, Noeud* enfant) {
     nouv_fils->suivant = parent->enfants;
     parent->enfants = nouv_fils;
 }
-// NOUVELLE FONCTION : Pour libérer la liste des enfants (mais pas les noeuds eux-mêmes)
+// Pour libérer la liste des enfants (mais pas les noeuds eux-mêmes)
 void libererEnfants(Fils *liste) {
     Fils *courant = liste;
     Fils *temp;

@@ -16,7 +16,7 @@ Arbre* creation(char* s){ //creation d'un nouveau noeud dans l'arbre
     noeud->capacite_total=0;
     noeud->conso_total=0;
     
-    // NOUVEAU : Initialisation du pointeur de réseau
+    // Initialisation du pointeur de réseau
     noeud->ptr_noeud_reseau = NULL; 
     
     return noeud;
@@ -106,17 +106,17 @@ Arbre* insertionAVL (Arbre* a, char* id_station ,int *h, long int capa, long int
         *h = 0;
         return a;
     }
-    // ... (Le reste de la fonction d'insertion et d'équilibrage reste inchangé) ...
+    
     // Note : Pensez à ajuster les appels récursifs pour inclure le nouveau paramètre !
     if(cmp < 0){ 
-        a->gauche = insertionAVL(a->gauche, id_station, h, capa, conso, noeud_a_indexer); // ATTENTION : le paramètre doit être inclus
+        a->gauche = insertionAVL(a->gauche, id_station, h, capa, conso, noeud_a_indexer); 
         *h = -*h; 
     }
     else{ 
-        a->droit = insertionAVL(a->droit, id_station, h, capa, conso, noeud_a_indexer); // ATTENTION : le paramètre doit être inclus
+        a->droit = insertionAVL(a->droit, id_station, h, capa, conso, noeud_a_indexer); 
     }
     
-    // ... (Reste de la logique d'équilibrage inchangée) ...
+    
     return a;
 }
 void parcoursInverse(Arbre* a, FILE* f) {
@@ -144,16 +144,16 @@ void freeAVL(Arbre *racine) {
        freeAVL(racine->gauche); // Libère le sous-arbre gauche 
        freeAVL(racine->droit); // Libère le sous-arbre droit 
        
-       // --- NOUVELLE LIGNE AJOUTÉE ---
+       
        if (racine->id_station != NULL) { 
            free(racine->id_station); // Libère la chaîne de caractères allouée par strdup
        }
-       // ------------------------------
+       
        
        free(racine); // Libère le nœud courant 
     } 
 }
-// Dans AVL.c (vers la fin du fichier)
+
 void libererReseauIndexe(Arbre *racine) {
     if (racine == NULL) return;
     
